@@ -1,0 +1,16 @@
+name = "fsn-apply-system"
+compatibility_date = "2026-06-24"
+pages_build_output_dir = "public"
+
+# Cloudflare D1 データベース
+# 大塚さんが Cloudflare ダッシュボードで D1 作成後、database_id を設定
+[[d1_databases]]
+binding = "DB"
+database_name = "fsn-apply-db"
+database_id = "WILL_BE_SET_AFTER_D1_CREATION"
+
+# 環境変数（GitHub Actions / Cloudflare Pages で設定）
+# RESEND_API_KEY      ─ Resend API キー
+# ADMIN_EMAIL         ─ 事務局通知用メールアドレス
+# FROM_EMAIL          ─ 送信元（info@funsportnexus.org）
+# FROM_NAME           ─ 送信元名（fun sport nexus 運営事務局）
