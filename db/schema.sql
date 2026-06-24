@@ -29,6 +29,7 @@ CREATE INDEX IF NOT EXISTS idx_slots_sort ON slots(sort_order);
 -- 申込（1申込＝1ユーザーの送信）
 CREATE TABLE IF NOT EXISTS entries (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  qr_token TEXT UNIQUE,                        -- 当日受付QR用ユニーク値（将来拡張）
   applicant_name TEXT NOT NULL,
   applicant_furigana TEXT NOT NULL,
   email TEXT NOT NULL,
@@ -40,6 +41,7 @@ CREATE TABLE IF NOT EXISTS entries (
   consent_allergy INTEGER NOT NULL DEFAULT 0,
   consent_rules INTEGER NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'confirmed',    -- confirmed / cancelled
+  checked_in_at TEXT,                          -- 当日受付チェックイン時刻（将来拡張）
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   ip_address TEXT,
   user_agent TEXT
@@ -48,6 +50,29 @@ CREATE TABLE IF NOT EXISTS entries (
 CREATE INDEX IF NOT EXISTS idx_entries_email ON entries(email);
 CREATE INDEX IF NOT EXISTS idx_entries_status ON entries(status);
 CREATE INDEX IF NOT EXISTS idx_entries_created ON entries(created_at);
+CREATE INDEX IF NOT EXISTS idx_entries_qr_token ON entries(qr_token);
+
+-- メール送信ログ（Resend失敗時の追跡・再送用）
+-- 軍神提案：リトライキュー（Cloudflare Queues 有料）を使わず、
+-- このテーブルでログ管理→管理画面から手動再送
+CREATE TABLE IF NOT EXISTS email_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  entry_id INTEGER,
+  email_to TEXT NOT NULL,
+  email_subject TEXT,
+  email_type TEXT NOT NULL,                    -- 'applicant' / 'admin' / 'cancel'
+  provider TEXT NOT NULL DEFAULT 'resend',     -- 'resend' / 'slack' / etc
+  status TEXT NOT NULL,                        -- 'sent' / 'failed' / 'retry_pending'
+  error_message TEXT,
+  provider_message_id TEXT,                    -- ResendのメッセージID等
+  sent_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_logs_entry ON email_logs(entry_id);
+CREATE INDEX IF NOT EXISTS idx_email_logs_status ON email_logs(status);
+CREATE INDEX IF NOT EXISTS idx_email_logs_created ON email_logs(created_at);
 
 -- 申込×スロット（中間テーブル：1申込に対して複数スロット選択可能）
 CREATE TABLE IF NOT EXISTS entry_slots (

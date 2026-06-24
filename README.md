@@ -31,8 +31,20 @@
 - **時間重複NG**：同じ時間帯に2つ以上のプログラムを選択するとエラー
 - **同種目複数回NG**：例：Legitダンス①②③を全部選択するとエラー
 - **定員到達時の自動ブロック**：満席スロットはチェック不可
-- 申込完了で自動メール2系統送信（事務局／申込者）
+- **レースコンディション対策**：D1 トランザクション（db.batch()）で悲観的ロック
+- 申込完了で通知2系統送信
+  - 申込者向け：Resend API（自動返信メール）
+  - 事務局向け：Slack Webhook（軍神提案・メール通数削減）
+- メール失敗時：email_logs テーブルに記録 → 管理画面から再送
 - 管理画面：申込一覧／残席ダッシュボード／定員調整／CSVエクスポート
+- 当日受付QR：entries.qr_token でユニーク値発行（将来拡張）
+
+## 設計レビュー履歴
+
+- 2026-06-24：軍神（チーフアーキテクト Gemini）によるアーキテクチャレビュー実施
+  - 結果：【極めて適切】
+  - 採用変更：Slack Webhook 通知 / email_logs テーブル / qr_token カラム / db.batch() 悲観的ロック
+  - 詳細：[REVIEW_REQUEST_TO_GUNSHIN_20260624.md](../../claude/hana/fun_sport_nexus/05_申込システム/)
 
 ## ディレクトリ構成
 
@@ -85,16 +97,27 @@
 1. Pages プロジェクトの「設定」→「Functions」→「D1 データベース バインディング」
 2. 変数名：`DB`、データベース：`fsn-apply-db` を選択
 
-### 4. Resend セットアップ
+### 4. Resend セットアップ（申込者向け自動返信のみ）
 
 1. https://resend.com で無料アカウント作成
 2. ドメイン認証：`funsportnexus.org` のDNS（Cloudflare）に SPF/DKIM レコード追加
 3. API キー取得
 4. Cloudflare Pages の「設定」→「環境変数」に追加：
    - `RESEND_API_KEY`：API キー
-   - `ADMIN_EMAIL`：`funsportnexus@spoan.or.jp`
    - `FROM_EMAIL`：`info@funsportnexus.org`
    - `FROM_NAME`：`fun sport nexus 運営事務局`
+
+**Resend無料枠（3,000通/月）対策（軍神提案）：**
+- 事務局向け通知は **メールではなく Slack Webhook** に切替（下記 Step 5）
+- これにより使用メール通数は申込者向けのみ（想定1,500通）に半減
+
+### 5. Slack Webhook セットアップ（事務局向け新規申込通知）
+
+1. Slack ワークスペースで通知用チャンネル作成（例：#fsn-apply-notifications）
+2. Slack アプリ追加 → Incoming Webhooks → Webhook URL 発行
+3. Cloudflare Pages の「設定」→「環境変数」に追加：
+   - `SLACK_WEBHOOK_URL`：Webhook URL
+   - `ADMIN_EMAIL_FALLBACK`：`funsportnexus@spoan.or.jp`（Slack失敗時の保険）
 
 ### 5. カスタムドメイン設定
 
@@ -103,6 +126,8 @@
 3. Cloudflare DNS で CNAME 自動設定（プロキシON）
 
 ### 6. Cloudflare Access（管理画面保護）
+
+ステップが繰り上がる：
 
 1. Zero Trust ダッシュボード → 「Access」→「Applications」
 2. アプリ追加：`apply.funsportnexus.org/admin/*`

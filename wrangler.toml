@@ -9,8 +9,10 @@ binding = "DB"
 database_name = "fsn-apply-db"
 database_id = "358323e4-53c6-4fa2-b0ac-b871133b2cd0"
 
-# 環境変数（GitHub Actions / Cloudflare Pages で設定）
-# RESEND_API_KEY      ─ Resend API キー
-# ADMIN_EMAIL         ─ 事務局通知用メールアドレス
+# 環境変数（Cloudflare Pages ダッシュボードで設定）
+# RESEND_API_KEY      ─ Resend API キー（申込者向け自動返信メール用）
 # FROM_EMAIL          ─ 送信元（info@funsportnexus.org）
 # FROM_NAME           ─ 送信元名（fun sport nexus 運営事務局）
+# SLACK_WEBHOOK_URL   ─ Slack Webhook URL（事務局向け新規申込通知）
+#                       軍神提案：メール通数削減のためSlack通知に切替
+# ADMIN_EMAIL_FALLBACK ─ Slack失敗時のフォールバック先（funsportnexus@spoan.or.jp）
