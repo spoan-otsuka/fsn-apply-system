@@ -1,18 +1,23 @@
 name = "fsn-apply-system"
+main = "src/index.js"
 compatibility_date = "2026-06-24"
-pages_build_output_dir = "public"
+compatibility_flags = ["nodejs_compat"]
+
+# 静的アセット（旧 pages_build_output_dir 相当）
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
 
 # Cloudflare D1 データベース
-# 大塚さんが Cloudflare ダッシュボードで D1 作成後、database_id を設定
 [[d1_databases]]
 binding = "DB"
 database_name = "fsn-apply-db"
 database_id = "358323e4-53c6-4fa2-b0ac-b871133b2cd0"
 
-# 環境変数（Cloudflare Pages ダッシュボードで設定）
+# 環境変数（Cloudflare ダッシュボードで設定）
 # RESEND_API_KEY      ─ Resend API キー（申込者向け自動返信メール用）
 # FROM_EMAIL          ─ 送信元（info@funsportnexus.org）
 # FROM_NAME           ─ 送信元名（fun sport nexus 運営事務局）
 # SLACK_WEBHOOK_URL   ─ Slack Webhook URL（事務局向け新規申込通知）
-#                       軍神提案：メール通数削減のためSlack通知に切替
 # ADMIN_EMAIL_FALLBACK ─ Slack失敗時のフォールバック先（funsportnexus@spoan.or.jp）
